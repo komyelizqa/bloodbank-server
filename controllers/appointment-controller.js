@@ -12,7 +12,7 @@ export const getCalendar = async (req, res) => {
         "appointments.appointmentId",
         "volunteers.name as volunteer",
         "appointments.startTime as date",
-        knex.raw("DATE_FORMAT(appointments.startTime, '%Y-%m-%d %H:%i') as time")  // Format the time
+        knex.raw("DATE_FORMAT(appointments.startTime, '%Y-%m-%d %H:%i') as time")
       )
       .whereBetween("startTime", [startDate || knex.fn.now(), endDate || knex.raw("DATE_ADD(CURDATE(), INTERVAL 7 DAY)")]);
 
