@@ -1,5 +1,5 @@
 import express from "express";
-import * as appointmentController from "../controllers/appointment-controller.js";  // Adjust the path according to your project structure
+import * as appointmentController from "../controllers/appointment-controller.js";
 
 const router = express.Router();
 
@@ -10,3 +10,4 @@ router.post("/appointments", appointmentController.createAppointment);
 router.delete("/appointments/:appointmentId", appointmentController.deleteAppointment);
 
 export default router;
+

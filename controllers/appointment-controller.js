@@ -7,14 +7,13 @@ export const getCalendar = async (req, res) => {
 
   try {
     const appointments = await knex("appointments")
-      .join("volunteers", "appointments.volunteerId", "=", "volunteers.volunteerId")
-      .select(
-        "appointments.appointmentId",
-        "volunteers.name as volunteer",
-        "appointments.startTime as date",
-        knex.raw("DATE_FORMAT(appointments.startTime, '%Y-%m-%d %H:%i') as time")
-      )
-      .whereBetween("startTime", [startDate || knex.fn.now(), endDate || knex.raw("DATE_ADD(CURDATE(), INTERVAL 7 DAY)")]);
+    .join("volunteers", "appointments.volunteerId", "=", "volunteers.volunteerId")
+    .select(
+      "appointments.appointmentId",
+      "volunteers.name as volunteer",
+      "appointments.startTime",
+      "appointments.endTime"
+    );  
 
     res.status(200).json(appointments);
   } catch (error) {
@@ -23,44 +22,56 @@ export const getCalendar = async (req, res) => {
 };
 
 export const createAppointment = async (req, res) => {
-    const { volunteerId, startTime, endTime, status } = req.body;
-  
-    try {
-      // Insert a new appointment
-      const [appointmentId] = await knex("appointments").insert({
-        volunteerId: 1,
-        workerId: 1,
-        startTime,
-        endTime,
-        status
-      }).returning("appointmentId");
-  
+  const { startTime, endTime, status } = req.body;
 
-      const newAppointment = await knex("appointments")
-        .join("volunteers", "appointments.volunteerId", "=", "volunteers.volunteerId")
-        .select("appointments.appointmentId", "volunteers.name as volunteer", "appointments.startTime as date")
-        .where("appointments.appointmentId", appointmentId)
-        .first();
-  
-      res.status(201).json(newAppointment);
-    } catch (error) {
-      res.status(500).json({ message: "Error creating appointment", error });
-    }
-  };
+  if (!startTime || !endTime || !status) {
+    return res.status(400).json({
+      message: "Please provide missing data"
+    });
+  }
 
-  export const deleteAppointment = async (req, res) => {
-    const { appointmentId } = req.params;
-  
-    try {
-      const deleted = await knex("appointments").where({ appointmentId }).del();
-  
-      if (deleted) {
-        res.status(200).json({ message: "Appointment canceled successfully" });
-      } else {
-        res.status(404).json({ message: "Appointment not found" });
-      }
-    } catch (error) {
-      res.status(500).json({ message: "Error deleting appointment", error });
+  try {
+    const [appointmentId] = await knex("appointments").insert({
+      volunteerId: 1,
+      workerId: 1,
+      startTime,
+      endTime,
+      status: "scheduled",
+      created_at: knex.fn.now()
+    }).returning("appointmentId");
+
+    // Update this query to include both startTime and endTime
+    const newAppointment = await knex("appointments")
+      .join("volunteers", "appointments.volunteerId", "=", "volunteers.volunteerId")
+      .select(
+        "appointments.appointmentId",
+        "volunteers.name as volunteer",
+        "appointments.startTime",
+        "appointments.endTime"
+      )
+      .where("appointments.appointmentId", appointmentId)
+      .first();
+
+    res.status(201).json(newAppointment);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating appointment", error });
+  }
+};
+
+
+export const deleteAppointment = async (req, res) => {
+  const { appointmentId } = req.params;
+
+  try {
+    const deleted = await knex("appointments").where({ appointmentId }).del();
+
+    if (deleted) {
+      res.status(200).json({ message: "Appointment canceled successfully" });
+    } else {
+      res.status(404).json({ message: "Appointment not found" });
     }
-  };
-  
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting appointment", error });
+  }
+};
+
