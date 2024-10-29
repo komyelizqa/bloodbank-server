@@ -54,7 +54,6 @@ export const createAppointment = async (req, res) => {
       created_at: knex.fn.now()
     }).returning("appointmentId");
 
-    // Update this query to include both startTime and endTime
     const newAppointment = await knex("appointments")
       .join("volunteers", "appointments.volunteerId", "=", "volunteers.volunteerId")
       .select(
