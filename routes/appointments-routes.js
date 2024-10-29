@@ -3,7 +3,7 @@ import * as appointmentController from "../controllers/appointment-controller.js
 
 const router = express.Router();
 
-router.get("/calendar", appointmentController.getCalendar);
+router.get("/calendar/:type/:year/:month/:day", appointmentController.getCalendar);
 
 router.post("/appointments", appointmentController.createAppointment);
 

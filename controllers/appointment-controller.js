@@ -1,19 +1,33 @@
 import initKnex from "knex";
 import configuration from "../knexfile.js";
 const knex = initKnex(configuration);
+import moment from 'moment';
 
 export const getCalendar = async (req, res) => {
-  const { startDate, endDate } = req.query;
+  const { type, year, month, day } = req.params;
+  let startDate, endDate;
+
+  if (type === "month") {
+    startDate = moment(`${year}-${month}-01`).startOf("month").format("YYYY-MM-DD");
+    endDate = moment(`${year}-${month}-01`).endOf("month").format("YYYY-MM-DD");
+  } else if (type === "week") {
+    startDate = moment(`${year}-${month}-${day}`).startOf("week").format("YYYY-MM-DD");
+    endDate = moment(`${year}-${month}-${day}`).endOf("week").format("YYYY-MM-DD");
+  } else { // day
+    startDate = moment(`${year}-${month}-${day}`).startOf("day").format("YYYY-MM-DD");
+    endDate = moment(`${year}-${month}-${day}`).endOf("day").format("YYYY-MM-DD");
+  }
 
   try {
     const appointments = await knex("appointments")
-    .join("volunteers", "appointments.volunteerId", "=", "volunteers.volunteerId")
-    .select(
-      "appointments.appointmentId",
-      "volunteers.name as volunteer",
-      "appointments.startTime",
-      "appointments.endTime"
-    );  
+      .join("volunteers", "appointments.volunteerId", "=", "volunteers.volunteerId")
+      .whereBetween("appointments.startTime", [startDate + ' 00:00:00', endDate + ' 23:59:59'])
+      .select(
+        "appointments.appointmentId",
+        "volunteers.name as volunteer",
+        "appointments.startTime",
+        "appointments.endTime"
+      );
 
     res.status(200).json(appointments);
   } catch (error) {
